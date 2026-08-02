@@ -160,16 +160,20 @@ jobs:
         run: |
           rustup target install aarch64-unknown-linux-gnu
 
-          export CC=aarch64-linux-gnu-gcc
-          export CXX=aarch64-linux-gnu-g++
-          export AR=aarch64-linux-gnu-ar
+          export CC="clang-21"
+          export CXX="clang-21"
           export CFLAGS="-O3"
           export CXXFLAGS="-O3"
-          unset LDFLAGS
 
-          export RUSTFLAGS="-Clinker=aarch64-linux-gnu-gcc"
+          export CC_aarch64_unknown_linux_gnu="clang-21 --target=aarch64-unknown-linux-gnu --sysroot=/usr/aarch64-linux-gnu"
+          export CXX_aarch64_unknown_linux_gnu="clang-21 --target=aarch64-unknown-linux-gnu --sysroot=/usr/aarch64-linux-gnu"
+          export AR_aarch64_unknown_linux_gnu="llvm-ar-21"
+          export CFLAGS_aarch64_unknown_linux_gnu="-O3"
+          export CXXFLAGS_aarch64_unknown_linux_gnu="-O3"
+
+          export RUSTFLAGS="-Clinker=clang-21 -Clink-arg=--target=aarch64-unknown-linux-gnu -Clink-arg=--sysroot=/usr/aarch64-linux-gnu -Clink-arg=-fuse-ld=lld"
           maturin build --release --features=pyo3 --out dist --find-interpreter -Zbuild-std=std,core,alloc,panic_abort --target aarch64-unknown-linux-gnu
-
+      
       - uses: actions/upload-artifact@v6
         if: always()
         with:
