@@ -128,7 +128,7 @@ jobs:
           python-version: 3.x
           pip-install: maturin
 
-      - name: Build
+      - name: Build x86_64
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
@@ -146,17 +146,32 @@ jobs:
           rustup toolchain install nightly-2026-01-16
           rustup override set nightly-2026-01-16
           rustup component add rust-src
-          rustup target install aarch64-unknown-linux-gnu
 
           export RUSTFLAGS="-Ctarget-cpu=x86-64-v3 -Clinker-plugin-lto -Clinker=clang-21 -Clink-arg=-fuse-ld=lld"
           maturin build --release --features=pyo3 --out dist --find-interpreter -Zbuild-std=std,core,alloc,panic_abort --target x86_64-unknown-linux-gnu
 
-          export CFLAGS="-flto=thin -O3"
-          export CXXFLAGS="-flto=thin -O3"
-          export RUSTFLAGS="-Clinker-plugin-lto -Clinker=clang-21 -Clink-arg=-fuse-ld=lld"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: wheels-linux-x86_64
+          path: dist
+
+      - name: Build aarch64
+        run: |
+          rustup target install aarch64-unknown-linux-gnu
+
+          export CFLAGS="-flto=thin -O3 --sysroot=/usr/aarch64-linux-gnu"
+          export CXXFLAGS="-flto=thin -O3 --sysroot=/usr/aarch64-linux-gnu"
+          export LDFLAGS="-flto=thin -fuse-ld=lld --sysroot=/usr/aarch64-linux-gnu"
+          export CC_aarch64_unknown_linux_gnu="clang-21 --target=aarch64-unknown-linux-gnu --sysroot=/usr/aarch64-linux-gnu"
+          export CXX_aarch64_unknown_linux_gnu="clang-21 --target=aarch64-unknown-linux-gnu --sysroot=/usr/aarch64-linux-gnu"
+          export AR_aarch64_unknown_linux_gnu="llvm-ar-21"
+
+          export RUSTFLAGS="-Clinker-plugin-lto -Clinker=clang-21 -Clink-arg=-fuse-ld=lld -Clink-arg=--target=aarch64-unknown-linux-gnu -Clink-arg=--sysroot=/usr/aarch64-linux-gnu"
           maturin build --release --features=pyo3 --out dist --find-interpreter -Zbuild-std=std,core,alloc,panic_abort --target aarch64-unknown-linux-gnu
 
       - uses: actions/upload-artifact@v6
+        if: always()
         with:
-          name: wheels-linux
+          name: wheels-linux-aarch64
           path: dist
